@@ -1,0 +1,36 @@
+# GitHub Actions：每天自动运行 apod_to_notion.py（电脑关机也照样跑）
+name: Daily APOD to Notion
+
+on:
+  schedule:
+    # cron 用 UTC 时间：06:30 UTC = 北京时间 14:30
+    # GitHub 的定时任务可能晚几分钟到几十分钟，属于正常
+    - cron: "30 6 * * *"
+  workflow_dispatch:   # 可以在 Actions 页面手动点 "Run workflow" 测试
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载仓库代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: 运行脚本
+        env:
+          # 来自仓库 Settings → Secrets and variables → Actions
+          NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          # 想换模型时，在 Secrets 里加 LLM_BASE_URL / LLM_MODEL 即可；没加就用默认的 DeepSeek
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: python apod_to_notion.py
