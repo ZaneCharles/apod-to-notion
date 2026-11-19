@@ -3,7 +3,7 @@ name: Daily APOD to Notion
 
 on:
   schedule:
-    # cron 用 UTC 时间：06:30 UTC = 北京时间 14:30
+    # cron 用 UTC 时间：06:43 UTC = 北京时间 14:43
     # GitHub 的定时任务可能晚几分钟到几十分钟，属于正常
     - cron: "43 6 * * *"
   workflow_dispatch:   # 可以在 Actions 页面手动点 "Run workflow" 测试
