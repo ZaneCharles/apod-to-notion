@@ -47,7 +47,7 @@ NOTION_API_URL = "https://api.notion.com/v1"
 NOTION_VERSION = "2022-06-28"
 
 DEFAULT_LLM_BASE_URL = "https://api.deepseek.com"
-DEFAULT_LLM_MODEL = "deepseek-flash"   # DeepSeek 当前的模型名（2026-10 官网文档）
+DEFAULT_LLM_MODEL = "deepseek-chat"   # DeepSeek 当前的模型名（2026-10 官网文档）
 
 # 数据库列名（要和 Notion 里一字不差）
 PROP_TITLE = "Daily APOD"
@@ -95,17 +95,17 @@ CONSTELLATIONS = [
 ]
 
 # —— 翻译规则（系统提示词）：把你的翻译习惯写成规则交给大模型 ——
-TRANSLATE_PROMPT = """你是天文科普翻译。把用户给的 N 段英文 APOD 解释逐段翻译成简体中文。
-规则：
-1. 天体、星座、星表编号、望远镜/仪器/探测器名称和专业术语，使用中国天文学会等公认的标准中文译名；
-   每个这样的术语前后各加一个空格，例如：位于 巨蛇座(Serpens) 方向；在 蜂巢星团(M44) 中；由 钱德拉X射线天文台 拍摄。
-   需要时在中文名后用括号保留英文或编号。
-2. 没有公认中文名的单个天体专名、地名、人名保留英文原文（同样前后加空格），例如：瑞典 Lansjärv 地平线。
-3. 数字、单位、年份必须准确，不要换算或四舍五入（如 6,500 光年 → 6500 光年）。
-4. 风格客观、克制、解释性，不加感叹、不加自己的评论，不夸张。
-5. 中文里不要出现任何链接或 Markdown 符号。
-6. 严格一段对一段：输出段数必须正好等于 N，不要合并或拆分。
-只输出 JSON，格式：{"zh": ["第1段译文", "第2段译文", ...]}"""
+TRANSLATE_PROMPT = """你是资深天文科普译者（风格参考《中国国家天文》与专业天文馆解说词）。请将用户提供的 N 段英文 APOD 解说逐段译为自然、流畅、优雅的简体中文。
+
+翻译准则：
+1. 语序重组（核心）：彻底摆脱英文被动语态与长定语从句的束缚，按中文表达习惯拆分或重排语序，做到信达雅，杜绝机翻腔（例如不要直译成“最亮的星位于中心左侧，是蓝色的……”，而应译为“画面中心偏左最亮的那颗蓝星是……”）。
+2. 专有名词规范：天体、星座、深空天体、星表编号及望远镜名称统一采用中国天文学名词审定委员会的标准译名（如 Alnitak 译为“参宿一”，Orion's Belt 译为“猎户座腰带”）。
+3. 排版克制：标准中文天体名直接融入行文，不要在中文后面强行用括号附带英文原名，也不要在中文词前后刻意加空格；仅保留无公认中文译名的冷门专名或星表编号（如 NGC 2023），且中文与英文字母/数字之间保留常规阅读间距即可。
+4. 精确严谨：距离、尺度、年份、光谱波段等科学数据必须严格准确，不做随意换算或删减。
+5. 纯净输出：译文中不得出现任何超链接或 Markdown 格式符号（如 **、[] 等）。
+6. 严格对齐：输出段落数量必须严格等于输入的 N 段，严禁合并或拆散段落。
+
+只输出合法 JSON，格式为：{"zh": ["第1段译文", "第2段译文", ...]}"""
 
 CLASSIFY_PROMPT = """你帮我给一张 APOD 天文图分类。只能从给定选项里选，拿不准就留空。
 输出 JSON：{"object_type": "选项或空字符串", "object_sub": ["0到3个选项"], "constellation": ["0到2个选项"]}
@@ -262,7 +262,8 @@ def fetch_article(article_url):
 
     # 标题："APOD: 2026 October 19 - Treble Clef: ... - NASA Science" → 去掉前后缀
     title = find_meta(page, "og:title") or ""
-    title = re.sub(r"^APOD: \d{4} \w+ \d{1,2} - ", "", title).replace(" - NASA Science", "")
+    title = re.sub(r"^APOD:\s*\d{4}\s+\w+\s+\d{1,2}\s*[-–—]\s*", "", title)
+    title = re.sub(r"\s*[-–—]\s*NASA Science$", "", title)
     info["title"] = title.strip()
     info["image"] = find_meta(page, "og:image")
 
